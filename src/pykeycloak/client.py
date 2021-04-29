@@ -1,6 +1,6 @@
 from keycloak.realm import KeycloakRealm
 
-class Client(Object):
+class Client(object):
 
     _realm = None
     _client = None
@@ -24,8 +24,8 @@ class Client(Object):
         self._realm = KeycloakRealm(self.config['server_url'], self.config['realm_name'])
         self._realm.client.session.verify = self.config['verify']
 
-        self._client = realm.open_id_connect(self.config['client_id',
-                                        self.config['client_secret')
+        self._client = realm.open_id_connect(self.config['client_id'],
+                                        self.config['client_secret'])
 
         self.access_token = self.config['access_token']
         self._refresh_token = self.config['refresh_token']

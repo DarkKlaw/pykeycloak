@@ -24,7 +24,7 @@ class Client(object):
         self._realm = KeycloakRealm(self.config['server_url'], self.config['realm_name'])
         self._realm.client.session.verify = self.config['verify']
 
-        self._client = realm.open_id_connect(self.config['client_id'],
+        self._client = self._realm.open_id_connect(self.config['client_id'],
                                         self.config['client_secret'])
 
         self.access_token = self.config['access_token']

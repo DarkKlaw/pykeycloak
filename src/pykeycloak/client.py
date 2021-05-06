@@ -38,7 +38,7 @@ class Client(object):
 
     def get_refresh_token(self):
 
-        return self._refresh_toekn
+        return self._refresh_token
 
     def get_user_info(self):
         return self._client.userinfo(self.get_access_token())

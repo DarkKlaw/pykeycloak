@@ -53,5 +53,5 @@ class Client(object):
             return a new token for audience (local client within the same realm) based on 
             the current access_token
         '''
-        res = self._client.token_exchange(self.get_refresh_token(), audiance = audience)
+        res = self._client.token_exchange(subject_token = self.get_access_token(), audience = audience)
         return res

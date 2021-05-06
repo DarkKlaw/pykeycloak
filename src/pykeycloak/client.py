@@ -27,7 +27,7 @@ class Client(object):
         self._client = self._realm.open_id_connect(self.config['client_id'],
                                         self.config['client_secret'])
 
-        self.access_token = self.config['access_token']
+        self._access_token = self.config['access_token']
         self._refresh_token = self.config['refresh_token']
 
     def get_access_token(self):

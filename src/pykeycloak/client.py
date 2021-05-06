@@ -46,7 +46,7 @@ class Client(object):
     def refresh_tokens(self):
         res = self._client.refresh_token(self.get_refresh_token())
         self._access_token = res['access_token']
-        self._refresh_token = res['refresh_toekn']
+        self._refresh_token = res['refresh_token']
 
     def token_exchange(self, audience):
         '''

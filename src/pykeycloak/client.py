@@ -1,4 +1,3 @@
-from urllib import HTTPError
 from keycloak.realm import KeycloakRealm
 
 class Client(object):

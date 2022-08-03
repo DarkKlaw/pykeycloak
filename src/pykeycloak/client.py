@@ -56,6 +56,14 @@ class Client(object):
         self._access_token = res['access_token']
         self._refresh_token = res['refresh_token']
 
+    def password_credentials(self, username: str, password: str):
+        '''
+            create new tokens using username and password
+        '''
+        res = self._client.password_credentials(username, password)
+        self._access_token = res['access_token']
+        self._refresh_token = res['refresh_token']
+
     def token_exchange(self, audience):
         '''
             return a new token for audience (local client within the same realm) based on 

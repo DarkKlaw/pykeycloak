@@ -1,3 +1,4 @@
+from urllib import HTTPError
 from keycloak.realm import KeycloakRealm
 
 class Client(object):
@@ -7,17 +8,18 @@ class Client(object):
     _access_token = None
     _refresh_token = None
 
-    def __init__(self, config):
+    def __init__(self, config, username: str = None, password: str = None):
         '''
             config: A map with the following keys
               'server_url': keycloak base server URL
               'realm_name': keycloak realm
               'client_id': client used for the original token
               'client_secret':
-              'access_token': initial access_token
-              'refresh_token': initial refresh_token
+              'access_token': initial access_token (optional)
+              'refresh_token': initial refresh_token (optional)
               'verify': either 'true|false' or the path to the ca cert
-
+            username: username of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
+            password: password of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
         '''
         self.config = config
         
@@ -26,9 +28,16 @@ class Client(object):
 
         self._client = self._realm.open_id_connect(self.config['client_id'],
                                         self.config['client_secret'])
-
-        self._access_token = self.config['access_token']
-        self._refresh_token = self.config['refresh_token']
+        try:
+            self._access_token = self.config['access_token']
+            self._refresh_token = self.config['refresh_token']
+        except KeyError:
+            if username and password:
+                res = self._client.password_credentials(username, password)
+                self._access_token = res['access_token']
+                self._refresh_token = res['refresh_token']
+            else:
+                raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
 
     def get_access_token(self):
         '''

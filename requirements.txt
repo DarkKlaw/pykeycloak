@@ -5,11 +5,13 @@ charset-normalizer==2.0.4
 colorama==0.4.4
 cryptography==36.0.0
 ecdsa==0.18.0
+filelock==3.12.0
 idna==3.3
 pip==21.2.4
 pyasn1==0.4.8
 pycosat==0.6.3
 pycparser==2.21
+pydantic==1.10.7
 pyOpenSSL==22.0.0
 PySocks==1.7.1
 python-jose==3.3.0
@@ -19,5 +21,6 @@ rsa==4.9
 setuptools==61.2.0
 six==1.16.0
 tqdm==4.63.0
+typing_extensions==4.5.0
 urllib3==1.26.8
 wheel==0.37.1

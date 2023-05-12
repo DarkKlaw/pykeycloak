@@ -21,16 +21,19 @@ config = {
 # create a client
 client = Client(config)
 
+# Initialize the tokens
+await client.initialize_tokens()
+
 # get current access token, and current refresh token
-client.get_access_token()
-client.get_refresh_token()
+await client.get_access_token()
+await client.get_refresh_token()
 
 # obtain new access token
-client.refresh_tokens()
+await client.refresh_tokens()
 
 # get user info
-client.get_user_info()
+await client.get_user_info()
 
 # get token for another audience
-tokens = client.token_exchange('another-client')
+tokens = await client.token_exchange('another-client')
 ```

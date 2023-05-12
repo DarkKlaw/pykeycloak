@@ -3,7 +3,7 @@ import sys
 
 from setuptools import  find_packages, setup
 
-VERSION = '0.0.7'
+VERSION = '0.1.0'
 EXCLUDED_PACKAGES = []
 
 
@@ -17,15 +17,18 @@ setup(
     license='MIT',
     package_dir={'': 'src'},
     packages=find_packages('src', EXCLUDED_PACKAGES),
-    install_requires=['python-keycloak-client>=0.2.2',
-                      ],
-
+    install_requires=[
+        'python-keycloak-client>=0.2.2',
+        'filelock>=3.10.6',
+        'pydantic>=1.10.4'
+    ],
     classifiers=[
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',  
         'Operating System :: POSIX :: Linux',        
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10'
     ],
 )

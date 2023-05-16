@@ -7,8 +7,9 @@ from keycloak.openid_connect import KeycloakOpenidConnect
 import json
 import time
 import warnings
+from pathlib import Path
 
-from models import ClientConfig, TokenFileContent
+from .models import ClientConfig, TokenFileContent
 
 class SharedTokenClient(object):
     _realm: KeycloakRealm
@@ -36,11 +37,11 @@ class SharedTokenClient(object):
         '''
         self.config = config
         # Connect to Keycloak
-        self._realm: KeycloakRealm = KeycloakRealm(self.config['server_url'], self.config['realm_name'])
-        self._realm.client.session.verify = self.config['verify']
+        self._realm: KeycloakRealm = KeycloakRealm(self.config.server_url, self.config.realm_name)
+        self._realm.client.session.verify = self.config.verify
         self._client: KeycloakOpenidConnect = self._realm.open_id_connect(
-            self.config['client_id'],
-            self.config['client_secret']
+            self.config.client_id,
+            self.config.client_secret.get_secret_value()
         )
         # Prep the files
         if config.token_filename is not None:
@@ -50,7 +51,7 @@ class SharedTokenClient(object):
             self.__token_filename = config.token_filename
         else:
             os.makedirs('./.pykeycloak', exist_ok=True)
-            self.__token_filename = FilePath(self.__default_token_filename.format(self.config['realm_name']))
+            self.__token_filename = Path(self.__default_token_filename.format(self.config.realm_name))
             self.__token_filename = self.__token_filename.resolve()
         self.__lock_filename = self.__token_filename.with_suffix('.lock')
         self.__lock = FileLock(self.__lock_filename)
@@ -75,7 +76,8 @@ class SharedTokenClient(object):
                         token_file_contents = await self.refresh_tokens(
                             token_file_contents = token_file_contents
                         ) # Refresh the token since it has expired
-                else:
+                    return token_file_contents
+                elif self.config.access_token is not None and self.config.refresh_token is not None:
                     # Eagerly refresh the tokens so we know the expiry
                     token_file_contents = await self.refresh_tokens(
                         token_file_contents = TokenFileContent(
@@ -86,12 +88,16 @@ class SharedTokenClient(object):
                             refresh_token=self.config['refresh_token']
                         )
                     )
-            except KeyError:
+                    return token_file_contents
+                elif username and password:
+                    token_file_contents = await self.password_credentials(username, password)
+                    return token_file_contents
+            except Exception:
                 if username and password:
                     token_file_contents = await self.password_credentials(username, password)
+                    return token_file_contents
                 else:
                     raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
-        return token_file_contents
             
     def __parse_response(self, response: dict) -> TokenFileContent:
         with self.__lock:
@@ -112,6 +118,8 @@ class SharedTokenClient(object):
             else:
                 refresh_token_lifespan = -1 # Value to specify we do not know expiry
             token_file_contents = TokenFileContent(
+                server_url=self.config.server_url,
+                realm_name=self.config.realm_name,
                 token_timestamp=token_timestamp,
                 access_token=access_token,
                 refresh_token=refresh_token,
@@ -119,7 +127,7 @@ class SharedTokenClient(object):
                 refresh_token_lifespan=refresh_token_lifespan
             )
             with open(self.__token_filename, 'w') as token_file:
-                json.dump(token_file_contents, token_file)
+                json.dump(token_file_contents.to_json(), token_file)
             return token_file_contents.copy()
     
     async def __get_token_attributes(self) -> TokenFileContent:
@@ -191,17 +199,19 @@ class SharedTokenClient(object):
         with self.__lock:
             return self._client.userinfo(await self.get_access_token())
 
-    async def refresh_tokens(self, token_file_contents: TokenFileContent) -> TokenFileContent:
+    async def refresh_tokens(self, token_file_contents: Optional[TokenFileContent] = None) -> TokenFileContent:
         '''
             Attempt to refresh the tokens using the stored refresh token
         '''
         with self.__lock:
+            if token_file_contents is None:
+                token_file_contents = await self.__get_token_attributes()
             if token_file_contents.refresh_token is None:
                 raise ValueError('Do not have a refresh token available. Use password_credentials(username: str, password: str) instead.')
-            elif token_file_contents.refresh_token_lifespan >= 0 and time.time() > (self._token_timestamp + self._refresh_token_lifespan):
-                raise RuntimeError('Refresh token has expired. Use password_credentials(username: str, password: str) to refresh tokens.')
             elif token_file_contents.refresh_token_lifespan < 0:
                 warnings.warn('Will try to refresh tokens using internal refresh token. Do not know if token has expired or not.')
+            elif time.time() > (self._token_timestamp + self._refresh_token_lifespan):
+                raise RuntimeError('Refresh token has expired. Use password_credentials(username: str, password: str) to refresh tokens.')
             res = self._client.refresh_token(token_file_contents.refresh_token)
             return self.__parse_response(res)
 
@@ -210,7 +220,7 @@ class SharedTokenClient(object):
         '''
             create new tokens using username and password
         '''
-        res = self._client.password_credentials(username, password)
+        res = self._client.password_credentials(username, password.get_secret_value())
         return self.__parse_response(res)
 
     async def token_exchange(self, audience) -> Any:

@@ -5,7 +5,7 @@ from keycloak.openid_connect import KeycloakOpenidConnect
 import time
 import warnings
 
-from models import ClientConfig, TokenFileContent
+from .models import ClientConfig, TokenFileContent
 
 class Client(object):
     _realm: KeycloakRealm
@@ -33,27 +33,28 @@ class Client(object):
         '''
         self.config = config
         # Connect to Keycloak
-        self._realm = KeycloakRealm(self.config['server_url'], self.config['realm_name'])
-        self._realm.client.session.verify = self.config['verify']
-        self._client = self._realm.open_id_connect(self.config['client_id'],
-                                        self.config['client_secret'])
+        self._realm = KeycloakRealm(self.config.server_url, self.config.realm_name)
+        self._realm.client.session.verify = self.config.verify
+        self._client = self._realm.open_id_connect(
+            self.config.client_id,
+            self.config.client_secret.get_secret_value()
+        )
         # Initialize the tokens
         self._token_info = TokenFileContent(
-            server_url=self.config['server_url'],
-            realm_name=self.config['realm_name'],
+            server_url=self.config.server_url,
+            realm_name=self.config.realm_name,
             token_timestamp=time.time(),
             access_token=''
         )
-        try:
+        if self.config.access_token is not None and self.config.refresh_token is not None:
             self._token_info.access_token = self.config['access_token']
             self._token_info.refresh_token = self.config['refresh_token']
             # Eagerly refresh the tokens so we know the expiry
             self.refresh_tokens()
-        except KeyError:
-            if username and password:
-                self.password_credentials(username, password)
-            else:
-                raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
+        elif username and password:
+            self.password_credentials(username, password)
+        else:
+            raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
 
     def get_token_timestamp(self):
         '''
@@ -137,7 +138,7 @@ class Client(object):
         '''
             create new tokens using username and password
         '''
-        res = self._client.password_credentials(username, password)
+        res = self._client.password_credentials(username, password.get_secret_value())
         return self.parse_response(res)
 
     def token_exchange(self, audience):

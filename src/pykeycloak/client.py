@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union, Any
 from pydantic import SecretStr, validate_arguments
 from keycloak.realm import KeycloakRealm
 from keycloak.openid_connect import KeycloakOpenidConnect
@@ -47,8 +47,8 @@ class Client(object):
             access_token=''
         )
         if self.config.access_token is not None and self.config.refresh_token is not None:
-            self._token_info.access_token = self.config['access_token']
-            self._token_info.refresh_token = self.config['refresh_token']
+            self._token_info.access_token = self.config.access_token
+            self._token_info.refresh_token = self.config.refresh_token
             # Eagerly refresh the tokens so we know the expiry
             self.refresh_tokens()
         elif username and password:
@@ -56,14 +56,14 @@ class Client(object):
         else:
             raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
 
-    def get_token_timestamp(self):
+    def get_token_timestamp(self) -> float:
         '''
             Return the timestamp when the tokens where received from the auth server.
             None if unknown
         '''
         return self._token_info.token_timestamp
 
-    def get_access_token_expiry_timestamp(self):
+    def get_access_token_expiry_timestamp(self) -> float:
         '''
             Return the timestamp when the access token expires
             None if unknown
@@ -72,7 +72,7 @@ class Client(object):
             return None
         return self._token_info.token_timestamp + self._token_info.access_token_lifespan
 
-    def get_refresh_token_expiry_timestamp(self):
+    def get_refresh_token_expiry_timestamp(self) -> float:
         '''
             Return the timestamp when the refresh token expires
             None if unknown
@@ -81,14 +81,14 @@ class Client(object):
             return None
         return self._token_info.token_timestamp + self._token_info.refresh_token_lifespan
     
-    def get_access_token(self):
-        if self._token_info.access_token_lifespan >= 0 and time.time() > (self._token_info.token_timestamp + self._token_info.access_token_lifespan):
-            self.refresh_tokens() # Refresh the token since it has expired
-        elif self._token_info.access_token_lifespan < 0:
+    def get_access_token(self) -> str:
+        if self._token_info.access_token_lifespan < 0:
             warnings.warn('We do not know if the access token has expired or not.')
+        elif time.time() > (self._token_info.token_timestamp + self._token_info.access_token_lifespan):
+            self.refresh_tokens() # Refresh the token since it has expired
         return self._token_info.access_token
 
-    def get_refresh_token(self):
+    def get_refresh_token(self) -> Union[str, None]:
         if self._token_info.refresh_token is None:
             raise ValueError('Do not have a refresh token available.')
         elif self._token_info.refresh_token_lifespan < 0:
@@ -99,7 +99,7 @@ class Client(object):
             return None
         return self._token_info.refresh_token
 
-    def get_user_info(self):
+    def get_user_info(self) -> Any:
         return self._client.userinfo(self._token_info.access_token)
 
     def parse_response(self, response: dict) -> TokenFileContent:
@@ -142,7 +142,7 @@ class Client(object):
         res = self._client.password_credentials(username, password.get_secret_value())
         return self.parse_response(res)
 
-    def token_exchange(self, audience):
+    def token_exchange(self, audience) -> Any:
         '''
             return a new token for audience (local client within the same realm) based on 
             the current access_token

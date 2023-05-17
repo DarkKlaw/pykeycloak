@@ -84,8 +84,8 @@ class SharedTokenClient(object):
                             server_url=self.config.server_url,
                             realm_name=self.config.realm_name,
                             token_timestamp=time.time(),
-                            access_token=self.config['access_token'],
-                            refresh_token=self.config['refresh_token']
+                            access_token=self.config.access_token,
+                            refresh_token=self.config.refresh_token
                         )
                     )
                     return token_file_contents

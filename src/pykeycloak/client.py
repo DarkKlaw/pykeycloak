@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Optional, Union, Any
 from pydantic import SecretStr, validate_arguments
 from keycloak.realm import KeycloakRealm
 from keycloak.openid_connect import KeycloakOpenidConnect
 import time
 import warnings
 
-from models import ClientConfig, TokenFileContent
+from .models import ClientConfig, TokenFileContent
 
 class Client(object):
     _realm: KeycloakRealm
@@ -33,36 +33,37 @@ class Client(object):
         '''
         self.config = config
         # Connect to Keycloak
-        self._realm = KeycloakRealm(self.config['server_url'], self.config['realm_name'])
-        self._realm.client.session.verify = self.config['verify']
-        self._client = self._realm.open_id_connect(self.config['client_id'],
-                                        self.config['client_secret'])
+        self._realm = KeycloakRealm(self.config.server_url, self.config.realm_name)
+        self._realm.client.session.verify = self.config.verify
+        self._client = self._realm.open_id_connect(
+            self.config.client_id,
+            self.config.client_secret.get_secret_value()
+        )
         # Initialize the tokens
         self._token_info = TokenFileContent(
-            server_url=self.config['server_url'],
-            realm_name=self.config['realm_name'],
+            server_url=self.config.server_url,
+            realm_name=self.config.realm_name,
             token_timestamp=time.time(),
             access_token=''
         )
-        try:
-            self._token_info.access_token = self.config['access_token']
-            self._token_info.refresh_token = self.config['refresh_token']
+        if self.config.access_token is not None and self.config.refresh_token is not None:
+            self._token_info.access_token = self.config.access_token
+            self._token_info.refresh_token = self.config.refresh_token
             # Eagerly refresh the tokens so we know the expiry
             self.refresh_tokens()
-        except KeyError:
-            if username and password:
-                self.password_credentials(username, password)
-            else:
-                raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
+        elif username and password:
+            self.password_credentials(username, password)
+        else:
+            raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
 
-    def get_token_timestamp(self):
+    def get_token_timestamp(self) -> float:
         '''
             Return the timestamp when the tokens where received from the auth server.
             None if unknown
         '''
         return self._token_info.token_timestamp
 
-    def get_access_token_expiry_timestamp(self):
+    def get_access_token_expiry_timestamp(self) -> float:
         '''
             Return the timestamp when the access token expires
             None if unknown
@@ -71,7 +72,7 @@ class Client(object):
             return None
         return self._token_info.token_timestamp + self._token_info.access_token_lifespan
 
-    def get_refresh_token_expiry_timestamp(self):
+    def get_refresh_token_expiry_timestamp(self) -> float:
         '''
             Return the timestamp when the refresh token expires
             None if unknown
@@ -80,24 +81,25 @@ class Client(object):
             return None
         return self._token_info.token_timestamp + self._token_info.refresh_token_lifespan
     
-    def get_access_token(self):
-        if self._token_info.access_token_lifespan >= 0 and time.time() > (self._token_info.token_timestamp + self._token_info.access_token_lifespan):
-            self.refresh_tokens() # Refresh the token since it has expired
-        elif self._token_info.access_token_lifespan < 0:
+    def get_access_token(self) -> str:
+        if self._token_info.access_token_lifespan < 0:
             warnings.warn('We do not know if the access token has expired or not.')
+        elif time.time() > (self._token_info.token_timestamp + self._token_info.access_token_lifespan):
+            self.refresh_tokens() # Refresh the token since it has expired
         return self._token_info.access_token
 
-    def get_refresh_token(self):
+    def get_refresh_token(self) -> Union[str, None]:
         if self._token_info.refresh_token is None:
             raise ValueError('Do not have a refresh token available.')
-        elif self._token_info.refresh_token_lifespan >= 0 and time.time() > (self._token_info.token_timestamp + self._token_info.refresh_token_lifespan):
-            # Refresh token has expired
-            warnings.warn('Refresh token has expired. Use password_credentials(username: str, password: str) to get new tokens')
         elif self._token_info.refresh_token_lifespan < 0:
             warnings.warn('We do not know if the refresh token has expired or not.')
+        elif time.time() > (self._token_info.token_timestamp + self._token_info.refresh_token_lifespan):
+            # Refresh token has expired
+            warnings.warn('Refresh token has expired. Use password_credentials(username: str, password: str) to get new tokens')
+            return None
         return self._token_info.refresh_token
 
-    def get_user_info(self):
+    def get_user_info(self) -> Any:
         return self._client.userinfo(self._token_info.access_token)
 
     def parse_response(self, response: dict) -> TokenFileContent:
@@ -137,10 +139,10 @@ class Client(object):
         '''
             create new tokens using username and password
         '''
-        res = self._client.password_credentials(username, password)
+        res = self._client.password_credentials(username, password.get_secret_value())
         return self.parse_response(res)
 
-    def token_exchange(self, audience):
+    def token_exchange(self, audience) -> Any:
         '''
             return a new token for audience (local client within the same realm) based on 
             the current access_token

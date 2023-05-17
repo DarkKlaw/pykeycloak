@@ -193,6 +193,7 @@ class SharedTokenClient(object):
             elif now > refresh_token_expiry:
                 # Refresh token has expired
                 warnings.warn('Refresh token has expired. Use password_credentials(username: str, password: str) to get new tokens')
+                return None
             return token_file_contents.refresh_token
 
     async def get_user_info(self) -> Any:

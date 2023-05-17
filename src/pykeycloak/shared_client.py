@@ -211,7 +211,7 @@ class SharedTokenClient(object):
                 raise ValueError('Do not have a refresh token available. Use password_credentials(username: str, password: str) instead.')
             elif token_file_contents.refresh_token_lifespan < 0:
                 warnings.warn('Will try to refresh tokens using internal refresh token. Do not know if token has expired or not.')
-            elif time.time() > (self._token_timestamp + self._refresh_token_lifespan):
+            elif time.time() > (token_file_contents.token_timestamp + token_file_contents.refresh_token_lifespan):
                 raise RuntimeError('Refresh token has expired. Use password_credentials(username: str, password: str) to refresh tokens.')
             res = self._client.refresh_token(token_file_contents.refresh_token)
             return self.__parse_response(res)

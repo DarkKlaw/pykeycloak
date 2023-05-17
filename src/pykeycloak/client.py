@@ -91,11 +91,12 @@ class Client(object):
     def get_refresh_token(self):
         if self._token_info.refresh_token is None:
             raise ValueError('Do not have a refresh token available.')
-        elif self._token_info.refresh_token_lifespan >= 0 and time.time() > (self._token_info.token_timestamp + self._token_info.refresh_token_lifespan):
-            # Refresh token has expired
-            warnings.warn('Refresh token has expired. Use password_credentials(username: str, password: str) to get new tokens')
         elif self._token_info.refresh_token_lifespan < 0:
             warnings.warn('We do not know if the refresh token has expired or not.')
+        elif time.time() > (self._token_info.token_timestamp + self._token_info.refresh_token_lifespan):
+            # Refresh token has expired
+            warnings.warn('Refresh token has expired. Use password_credentials(username: str, password: str) to get new tokens')
+            return None
         return self._token_info.refresh_token
 
     def get_user_info(self):

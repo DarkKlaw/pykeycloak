@@ -1,7 +1,7 @@
 # PyKeycloak
 Client library to simplify token access 
 
-This package use [python-keycloak-client](https://github.com/Peter-Slump/python-keycloak-client) as a base for now and provide a much simmpler APIs for our needs.```
+This package uses [python-keycloak-client](https://github.com/Peter-Slump/python-keycloak-client) as a base for now and provides a much simpler APIs for our needs.```
 
 ## In-memory token (and synchronous) client 
 

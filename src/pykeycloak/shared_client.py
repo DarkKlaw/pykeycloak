@@ -1,6 +1,6 @@
 import os
 from typing import Optional, Union, Any
-from pydantic import SecretStr, FilePath, validate_arguments, parse_obj_as
+from pydantic import SecretStr, validate_arguments, parse_obj_as
 from filelock import FileLock
 from keycloak.realm import KeycloakRealm
 from keycloak.openid_connect import KeycloakOpenidConnect
@@ -15,8 +15,8 @@ class SharedTokenClient(object):
     _realm: KeycloakRealm
     _client: KeycloakOpenidConnect
     __default_token_filename = './.pykeycloak/{}.tok'
-    __token_filename: FilePath
-    __lock_filename: FilePath
+    __token_filename: Union[Path, None] = None
+    __lock_filename: Path
 
     @validate_arguments
     def __init__(
@@ -29,6 +29,7 @@ class SharedTokenClient(object):
               'realm_name': keycloak realm
               'client_id': client used for the original token
               'client_secret': secret needed to connect to Keycloak as the client
+              'token_filename': path to file where the token are/will be stored in (optional)
               'access_token': initial access_token (optional)
               'refresh_token': initial refresh_token (optional)
               'verify': either 'true|false' or the path to the ca cert. Defaults to True
@@ -45,9 +46,10 @@ class SharedTokenClient(object):
         )
         # Prep the files
         if config.token_filename is not None:
+            self.__token_filename = Path(config.token_filename)
             self.__token_filename = self.__token_filename.resolve()
-            if not config.token_filename.parent.exists():
-                os.makedirs(str(config.token_filename.parent), exist_ok=True)
+            if not self.__token_filename.parent.exists():
+                os.makedirs(str(self.__token_filename.parent), exist_ok=True)
             self.__token_filename = config.token_filename
         else:
             os.makedirs('./.pykeycloak', exist_ok=True)
@@ -92,12 +94,14 @@ class SharedTokenClient(object):
                 elif username and password:
                     token_file_contents = await self.password_credentials(username, password)
                     return token_file_contents
+                else:
+                    raise FileNotFoundError('No token file exists')
             except Exception:
                 if username and password:
                     token_file_contents = await self.password_credentials(username, password)
                     return token_file_contents
                 else:
-                    raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
+                    raise ValueError('Initial Tokens in config dict or username and password arguments must be provided if the token file does not exists.')
             
     def __parse_response(self, response: dict) -> TokenFileContent:
         with self.__lock:

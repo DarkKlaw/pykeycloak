@@ -1,14 +1,12 @@
-import os
-from typing import Optional, Union, Any
-from pydantic import BaseModel, SecretStr, FilePath, HttpUrl
-from datetime import datetime
+from typing import Optional, Union
+from pydantic import BaseModel, SecretStr, HttpUrl
 
 class ClientConfig(BaseModel):
     server_url: HttpUrl
     realm_name: str
     client_id: str
     client_secret: SecretStr
-    token_filename: Optional[FilePath] = None
+    token_filename: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     verify: Union[bool, str] = True

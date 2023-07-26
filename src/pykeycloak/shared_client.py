@@ -46,15 +46,15 @@ class SharedTokenClient(object):
         )
         # Prep the files
         if config.token_filename is not None:
-            self.__token_filename = Path(config.token_filename)
-            self.__token_filename = self.__token_filename.resolve()
+            token_filename = Path(config.token_filename)
+            self.__token_filename = token_filename.resolve()
             if not self.__token_filename.parent.exists():
                 os.makedirs(str(self.__token_filename.parent), exist_ok=True)
             self.__token_filename = config.token_filename
         else:
             os.makedirs('./.pykeycloak', exist_ok=True)
-            self.__token_filename = Path(self.__default_token_filename.format(self.config.realm_name))
-            self.__token_filename = self.__token_filename.resolve()
+            token_filename = Path(self.__default_token_filename.format(self.config.realm_name))
+            self.__token_filename = token_filename.resolve()
         self.__lock_filename = self.__token_filename.with_suffix('.lock')
         self.__lock = FileLock(self.__lock_filename)
 
@@ -91,7 +91,7 @@ class SharedTokenClient(object):
                         )
                     )
                     return token_file_contents
-                elif username and password:
+                elif username is not None and password is not None:
                     token_file_contents = await self.password_credentials(username, password)
                     return token_file_contents
                 else:

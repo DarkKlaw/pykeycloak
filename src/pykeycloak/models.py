@@ -17,7 +17,7 @@ class TokenFileContent(BaseModel):
     token_timestamp: float
     access_token: str
     access_token_lifespan: int = -1
-    refresh_token: Union[str, None]
+    refresh_token: Union[str, None] = None
     refresh_token_lifespan: int = -1
 
     def to_json(self) -> dict:

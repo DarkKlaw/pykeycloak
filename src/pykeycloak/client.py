@@ -50,9 +50,9 @@ class Client(object):
             self._token_info.access_token = self.config.access_token
             self._token_info.refresh_token = self.config.refresh_token
             # Eagerly refresh the tokens so we know the expiry
-            self.refresh_tokens()
+            self._token_info = self.refresh_tokens()
         elif username and password:
-            self.password_credentials(username, password)
+            self._token_info = self.password_credentials(username, password)
         else:
             raise ValueError('Initial Tokens in config dict or username and password arguments must be provided.')
 
@@ -85,12 +85,12 @@ class Client(object):
         if self._token_info.access_token_lifespan < 0:
             warnings.warn('We do not know if the access token has expired or not.')
         elif time.time() > (self._token_info.token_timestamp + self._token_info.access_token_lifespan):
-            self.refresh_tokens() # Refresh the token since it has expired
+            self._token_info = self.refresh_tokens() # Refresh the token since it has expired
         return self._token_info.access_token
 
     def get_refresh_token(self) -> Union[str, None]:
         if self._token_info.refresh_token is None:
-            raise ValueError('Do not have a refresh token available.')
+            raise None
         elif self._token_info.refresh_token_lifespan < 0:
             warnings.warn('We do not know if the refresh token has expired or not.')
         elif time.time() > (self._token_info.token_timestamp + self._token_info.refresh_token_lifespan):

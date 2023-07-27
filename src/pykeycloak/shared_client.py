@@ -50,7 +50,6 @@ class SharedTokenClient(object):
             self.__token_filename = token_filename.resolve()
             if not self.__token_filename.parent.exists():
                 os.makedirs(str(self.__token_filename.parent), exist_ok=True)
-            self.__token_filename = config.token_filename
         else:
             os.makedirs('./.pykeycloak', exist_ok=True)
             token_filename = Path(self.__default_token_filename.format(self.config.realm_name))

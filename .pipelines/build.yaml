@@ -1,0 +1,66 @@
+resources:
+
+# custom resource for pushing pypi package
+- name: pypi
+  type: registry-image
+  source:
+    repository: cfplatformeng/concourse-pypi-resource
+
+# The repo with our Dockerfile
+- name: pykeycloak
+  type: git
+  icon: github
+  source:
+    #The SSH URL for our repo
+    uri: git@github.com:cse-cst/pykeycloak.git
+    #The branch you want to pull for the build
+    branch: main 
+    #This is the name of the deploy-key secret in kubernetes
+    private_key: ((pykeycloak-key.key))
+    # Only trigger new builds on changes in the following paths
+    paths: 
+    - setup.py
+
+# custom resource for pushing pypi package
+- name: pykeycloak-package
+  type: pypi
+  source:
+    name: pykeycloak
+    pre_release: true
+    repository:
+      authenticate: always
+      index_url: ((nexus.repo_url))/simple
+      repository_url: ((nexus.repo_url))
+      username: ((nexus.user))
+      password: ((nexus.pass))
+
+jobs:
+# Use a basic python image to build, test and push tnt to nexus
+- name: build-and-push
+  plan:
+  - get: pykeycloak
+  - task: build-pykeycloak
+    config:
+      inputs:
+      - name: pykeycloak
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: python}
+      run:
+        path: /bin/sh
+        args:
+         - -c
+         - |
+          pip install -r pykeycloak/requirements.txt; 
+          pip install build twine pytest; 
+          python -m build pykeycloak; 
+      outputs:
+        - name: pykeycloak
+
+  - put: pykeycloak-package
+    params:
+      glob: 'pykeycloak/dist/*'
+    get_params:
+      count_retries: 10
+      delay_between_retries: 30

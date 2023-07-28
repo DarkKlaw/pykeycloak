@@ -53,7 +53,8 @@ jobs:
          - -c
          - |
           pip install -r pykeycloak/requirements.txt; 
-          pip install build twine pytest; 
+          pip install build;
+          pytest pykeycloak;
           python -m build pykeycloak; 
       outputs:
         - name: pykeycloak

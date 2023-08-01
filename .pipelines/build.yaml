@@ -39,6 +39,7 @@ jobs:
 - name: build-and-push
   plan:
   - get: pykeycloak
+    trigger: true
   - task: build-pykeycloak
     config:
       inputs:

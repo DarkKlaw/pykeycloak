@@ -54,7 +54,7 @@ jobs:
          - |
           pip install -r pykeycloak/requirements.txt; 
           pip install build;
-          pytest pykeycloak;
+          python -m pytest pykeycloak;
           python -m build pykeycloak; 
       outputs:
         - name: pykeycloak

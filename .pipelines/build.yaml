@@ -1,11 +1,11 @@
-resources:
-
+resource_types:
 # custom resource for pushing pypi package
 - name: pypi
   type: registry-image
   source:
     repository: cfplatformeng/concourse-pypi-resource
 
+resources:
 # The repo with our Dockerfile
 - name: pykeycloak
   type: git
@@ -35,7 +35,7 @@ resources:
       password: ((nexus.pass))
 
 jobs:
-# Use a basic python image to build, test and push tnt to nexus
+# Use a basic python image to build, test and push package to nexus
 - name: build-and-push
   plan:
   - get: pykeycloak

@@ -14,7 +14,7 @@ resources:
     #The SSH URL for our repo
     uri: git@github.com:cse-cst/pykeycloak.git
     #The branch you want to pull for the build
-    branch: main 
+    branch: RESDALT-150 
     #This is the name of the deploy-key secret in kubernetes
     private_key: ((pykeycloak-key.key))
     # Only trigger new builds on changes in the following paths

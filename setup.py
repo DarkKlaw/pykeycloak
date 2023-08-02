@@ -11,7 +11,7 @@ setup(
     name='pykeycloak',
     version=VERSION,
     description='A Simple wrapper for python-keycloak-client',
-    url='https://github.com/cccs-is/pykeycloak',
+    url='https://github.com/cse-cst/pykeycloak',
     author='IS',
     author_email='',
     license='MIT',

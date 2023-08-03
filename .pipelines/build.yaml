@@ -26,7 +26,6 @@ resources:
   type: pypi
   source:
     name: pykeycloak
-    pre_release: true
     repository:
       authenticate: always
       index_url: ((nexus.repo_url))/simple

@@ -95,12 +95,12 @@ class SharedTokenClient(object):
                     return token_file_contents
                 else:
                     raise FileNotFoundError('No token file exists')
-            except Exception:
+            except Exception as e:
                 if username and password:
                     token_file_contents = await self.password_credentials(username, password)
                     return token_file_contents
                 else:
-                    raise ValueError('Initial Tokens in config dict or username and password arguments must be provided if the token file does not exists.')
+                    raise e
             
     def __parse_response(self, response: dict) -> TokenFileContent:
         with self.__lock:

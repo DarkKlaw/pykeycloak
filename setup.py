@@ -3,14 +3,14 @@ import sys
 
 from setuptools import  find_packages, setup
 
-VERSION = '0.1.6'
+VERSION = '0.2.0'
 EXCLUDED_PACKAGES = []
 
 
 setup(
     name='pykeycloak',
     version=VERSION,
-    description='A Simple wrapper for python-keycloak-client',
+    description='A Simple wrapper for python-keycloak',
     url='https://github.com/cse-cst/pykeycloak',
     author='IS',
     author_email='',
@@ -18,7 +18,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src', EXCLUDED_PACKAGES),
     install_requires=[
-        'python-keycloak-client>=0.2.2',
+        'python-keycloak>=3.3.0',
         'filelock>=3.10.6',
         'pydantic>=1.10.4'
     ],

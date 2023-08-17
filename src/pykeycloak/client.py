@@ -1,21 +1,20 @@
 from typing import Optional, Union, Any
 from pydantic import SecretStr, validate_arguments
-from keycloak.realm import KeycloakRealm
-from keycloak.openid_connect import KeycloakOpenidConnect
+from keycloak import KeycloakOpenID
 import time
 import warnings
 
 from .models import ClientConfig, TokenFileContent
 
 class Client(object):
-    _realm: KeycloakRealm
-    _client: KeycloakOpenidConnect
+    _client: KeycloakOpenID
     _token_info: TokenFileContent
 
-    @validate_arguments
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self, 
         config: ClientConfig, 
+        client: Optional[Any] = None,
         username: Optional[str] = None, 
         password: Optional[SecretStr] = None
     ):
@@ -28,17 +27,30 @@ class Client(object):
               'access_token': initial access_token (optional)
               'refresh_token': initial refresh_token (optional)
               'verify': either 'true|false' or the path to the ca cert. Defaults to True
+            client: Keycloak client to use instead of initializing one with the supplied config. Mainly for testing purposes.
             username: username of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
             password: password of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
         '''
-        self.config = config
+        self.config = config.copy(deep=True)
+        # Verify the server_url (Ensure its ends with /auth/)
+        if self.config.server_url.endswith('/auth'):
+            self.config.server_url += '/'
+        elif not self.config.server_url.endswith('/auth/'):
+            if self.config.server_url.endswith('/'):
+                self.config.server_url += 'auth/'
+            else:
+                self.config.server_url += '/auth/'
         # Connect to Keycloak
-        self._realm = KeycloakRealm(self.config.server_url, self.config.realm_name)
-        self._realm.client.session.verify = self.config.verify
-        self._client = self._realm.open_id_connect(
-            self.config.client_id,
-            self.config.client_secret.get_secret_value()
-        )
+        if client is None:
+            self._client = KeycloakOpenID(
+                server_url=self.config.server_url,
+                client_id=self.config.client_id,
+                realm_name=self.config.realm_name,
+                client_secret_key=self.config.client_secret.get_secret_value(),
+                verify=self.config.verify
+            )
+        else:
+            self._client = client
         # Initialize the tokens
         self._token_info = TokenFileContent(
             server_url=self.config.server_url,
@@ -139,7 +151,10 @@ class Client(object):
         '''
             create new tokens using username and password
         '''
-        res = self._client.password_credentials(username, password.get_secret_value())
+        res = self._client.token(
+            username = username, 
+            password = password.get_secret_value()
+        )
         return self.parse_response(res)
 
     def token_exchange(self, audience) -> Any:
@@ -147,5 +162,5 @@ class Client(object):
             return a new token for audience (local client within the same realm) based on 
             the current access_token
         '''
-        res = self._client.token_exchange(subject_token = self.get_access_token(), audience = audience)
+        res = self._client.exchange_token(self.get_access_token(), audience)
         return res

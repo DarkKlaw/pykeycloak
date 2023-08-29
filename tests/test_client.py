@@ -20,21 +20,18 @@ def initialize_test_client(
     init_refresh_token: Optional[str] = None
 ) -> Tuple[Client, Mock]:
     mock_client = MagicMock()
-    with patch('src.pykeycloak.client.KeycloakRealm', autospec=True) as mock_realm:
-        mock_realm_value = mock_realm.return_value
-        mock_realm_value.open_id_connect.return_value = mock_client
-        if init_access_token is not None and init_refresh_token is not None:
-            config.access_token = init_access_token
-            config.refresh_token = init_refresh_token
-            # Patch necessary function(s) to test refresh_tokens
-            mock_client.refresh_token.return_value = mock_token_response
-        elif username is not None and password is not None:
-            # Patch necessary function(s) to test password_credentials
-            mock_client.password_credentials.return_value = mock_token_response
-        # Initialize the Client
-        client = Client(config, username = username, password = password)
-        # Return the client (and the mock Keycloak Client)
-        return client, mock_client
+    if init_access_token is not None and init_refresh_token is not None:
+        config.access_token = init_access_token
+        config.refresh_token = init_refresh_token
+        # Patch necessary function(s) to test refresh_tokens
+        mock_client.refresh_token.return_value = mock_token_response
+    elif username is not None and password is not None:
+        # Patch necessary function(s) to test password_credentials
+        mock_client.token.return_value = mock_token_response
+    # Initialize the Client
+    client = Client(config, client=mock_client, username = username, password = password)
+    # Return the client (and the mock Keycloak Client)
+    return client, mock_client
     
 def test_client_init_with_refresh():
     config: ClientConfig = ClientConfig(
@@ -153,7 +150,7 @@ def test_client_token_exchange():
         username='test',
         password='password'
     )
-    mock_client.token_exchange.return_value = 'Token exchanged'
+    mock_client.exchange_token.return_value = 'Token exchanged'
     assert client.token_exchange('test') == 'Token exchanged'
 
 def test_client_autorefresh_on_expired_access_token_get():

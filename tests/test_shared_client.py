@@ -15,13 +15,10 @@ def initialize_test_client(
     config: ClientConfig
 ) -> Tuple[SharedTokenClient, Mock]:
     mock_client = MagicMock()
-    with patch('src.pykeycloak.shared_client.KeycloakRealm', autospec=True) as mock_realm:
-        mock_realm_value = mock_realm.return_value
-        mock_realm_value.open_id_connect.return_value = mock_client
-        # Initialize the Client
-        client = SharedTokenClient(config)
-        # Return the client (and the mock Keycloak Client)
-        return client, mock_client
+    # Initialize the Client
+    client = SharedTokenClient(config, client=mock_client)
+    # Return the client (and the mock Keycloak Client)
+    return client, mock_client
     
 def initialize_token_file(
     token_filename: str,
@@ -40,8 +37,10 @@ async def test_client_initialization_with_creds():
             client_secret='client_secret',
             token_filename=f'{tmp_dir}/test_realm.tok'
         )
+        # Initialize the Client
         client, mock_client = initialize_test_client(config)
-        mock_client.password_credentials.return_value = {
+        # Set the return value
+        mock_client.token.return_value = {
             'access_token': 'access_token',
             'refresh_token': 'refresh_token',
             'expires_in': 600,
@@ -232,7 +231,7 @@ async def test_client_initialization_with_expired_existing_file_with_creds():
             token_filename=f'{tmp_dir}/test_realm.tok'
         )
         client, mock_client = initialize_test_client(config)
-        mock_client.password_credentials.return_value = {
+        mock_client.token.return_value = {
             'access_token': 'access_token',
             'refresh_token': 'refresh_token',
             'expires_in': 600,
@@ -294,7 +293,7 @@ async def test_client_initialization_parser_error():
             token_filename=f'{tmp_dir}/test_realm.tok'
         )
         client, mock_client = initialize_test_client(config)
-        mock_client.password_credentials.return_value = {}
+        mock_client.token.return_value = {}
         with pytest.raises(KeyError) as exc_info:
             token_content = await client.initialize_tokens(
                 username='test',
@@ -535,5 +534,5 @@ async def test_client_token_exchange():
             mock_time.return_value = 1100
             # Initialize the tokens
             token_content = await client.initialize_tokens()
-            mock_client.token_exchange.return_value = 'Token exchanged'
+            mock_client.exchange_token.return_value = 'Token exchanged'
             assert await client.token_exchange('test') == 'Token exchanged'

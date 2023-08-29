@@ -2,8 +2,7 @@ import os
 from typing import Optional, Union, Any
 from pydantic import SecretStr, validate_arguments, parse_obj_as
 from filelock import FileLock
-from keycloak.realm import KeycloakRealm
-from keycloak.openid_connect import KeycloakOpenidConnect
+from keycloak import KeycloakOpenID
 import json
 import time
 import warnings
@@ -12,16 +11,16 @@ from pathlib import Path
 from .models import ClientConfig, TokenFileContent
 
 class SharedTokenClient(object):
-    _realm: KeycloakRealm
-    _client: KeycloakOpenidConnect
+    _client: KeycloakOpenID
     __default_token_filename = './.pykeycloak/{}.tok'
     __token_filename: Union[Path, None] = None
     __lock_filename: Path
 
-    @validate_arguments
+    @validate_arguments()
     def __init__(
         self, 
-        config: ClientConfig
+        config: ClientConfig,
+        client: Optional[Any] = None
     ):
         '''
             config: A map with the following keys
@@ -32,18 +31,29 @@ class SharedTokenClient(object):
               'token_filename': path to file where the token are/will be stored in (optional)
               'access_token': initial access_token (optional)
               'refresh_token': initial refresh_token (optional)
-              'verify': either 'true|false' or the path to the ca cert. Defaults to True
-            username: username of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
-            password: password of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
+              'verify': Boolean. Defaults to True
+            client: 
         '''
-        self.config = config
+        self.config = config.copy(deep=True)
+        # Verify the server_url (Ensure its ends with /auth/)
+        if self.config.server_url.endswith('/auth'):
+            self.config.server_url += '/'
+        elif not self.config.server_url.endswith('/auth/'):
+            if self.config.server_url.endswith('/'):
+                self.config.server_url += 'auth/'
+            else:
+                self.config.server_url += '/auth/'
         # Connect to Keycloak
-        self._realm: KeycloakRealm = KeycloakRealm(self.config.server_url, self.config.realm_name)
-        self._realm.client.session.verify = self.config.verify
-        self._client: KeycloakOpenidConnect = self._realm.open_id_connect(
-            self.config.client_id,
-            self.config.client_secret.get_secret_value()
-        )
+        if client is None:
+            self._client = KeycloakOpenID(
+                server_url=self.config.server_url,
+                client_id=self.config.client_id,
+                realm_name=self.config.realm_name,
+                client_secret_key=self.config.client_secret.get_secret_value(),
+                verify=self.config.verify
+            )
+        else:
+            self._client = client
         # Prep the files
         if config.token_filename is not None:
             token_filename = Path(config.token_filename)
@@ -224,7 +234,10 @@ class SharedTokenClient(object):
         '''
             create new tokens using username and password
         '''
-        res = self._client.password_credentials(username, password.get_secret_value())
+        res = self._client.token(
+            username = username, 
+            password = password.get_secret_value()
+        )
         return self.__parse_response(res)
 
     async def token_exchange(self, audience) -> Any:
@@ -232,5 +245,5 @@ class SharedTokenClient(object):
             return a new token for audience (local client within the same realm) based on 
             the current access_token
         '''
-        res = self._client.token_exchange(subject_token = await self.get_access_token(), audience = audience)
+        res = self._client.exchange_token(await self.get_access_token(), audience)
         return res

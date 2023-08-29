@@ -9,7 +9,7 @@ class ClientConfig(BaseModel):
     token_filename: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
-    verify: Union[bool, str] = True
+    verify: bool = True
 
 class TokenFileContent(BaseModel):
     server_url: HttpUrl

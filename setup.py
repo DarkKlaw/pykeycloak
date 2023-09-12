@@ -10,7 +10,7 @@ EXCLUDED_PACKAGES = []
 setup(
     name='pykeycloak',
     version=VERSION,
-    description='A Simple wrapper for python-keycloak',
+    description='A Simple wrapper for python-keycloak. Mainly used for simplifying keycloak interactions in Jupyter Notebooks.',
     url='https://github.com/cse-cst/pykeycloak',
     author='IS',
     author_email='',

@@ -1,5 +1,5 @@
 from typing import Optional, Union, Any
-from pydantic import SecretStr, validate_arguments
+from pydantic import SecretStr, HttpUrl, validate_arguments, parse_obj_as
 from keycloak import KeycloakOpenID
 import time
 import warnings
@@ -32,18 +32,21 @@ class Client(object):
             password: password of the user we want to get the token for (if config['access_token'] and config['refresh_token'] are not given)
         '''
         self.config = config.copy(deep=True)
+        str_url = str(self.config.server_url)
         # Verify the server_url (Ensure its ends with /auth/)
-        if self.config.server_url.endswith('/auth'):
-            self.config.server_url += '/'
-        elif not self.config.server_url.endswith('/auth/'):
-            if self.config.server_url.endswith('/'):
-                self.config.server_url += 'auth/'
+        if str_url.endswith('/auth'):
+            str_url += '/'
+        elif not str_url.endswith('/auth/'):
+            if str_url.endswith('/'):
+                str_url += 'auth/'
             else:
-                self.config.server_url += '/auth/'
+                str_url += '/auth/'
+        # Override the config url
+        self.config.server_url = parse_obj_as(HttpUrl, str_url)
         # Connect to Keycloak
         if client is None:
             self._client = KeycloakOpenID(
-                server_url=self.config.server_url,
+                server_url=str(self.config.server_url),
                 client_id=self.config.client_id,
                 realm_name=self.config.realm_name,
                 client_secret_key=self.config.client_secret.get_secret_value(),

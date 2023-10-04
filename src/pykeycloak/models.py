@@ -22,7 +22,7 @@ class TokenFileContent(BaseModel):
 
     def to_json(self) -> dict:
         return {
-            'server_url': self.server_url,
+            'server_url': str(self.server_url),
             'realm_name': self.realm_name,
             'token_timestamp': self.token_timestamp,
             'access_token': self.access_token,

@@ -20,7 +20,7 @@ class TokenFileContent(BaseModel):
     refresh_token: Union[str, None] = None
     refresh_token_lifespan: int = -1
 
-    def to_json(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             'server_url': str(self.server_url),
             'realm_name': self.realm_name,

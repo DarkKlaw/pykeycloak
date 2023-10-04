@@ -25,7 +25,7 @@ def initialize_token_file(
     token_file_contents: TokenFileContent
 ):
     with open(token_filename, 'w') as token_file:
-        json.dump(token_file_contents.to_json(), token_file)
+        json.dump(token_file_contents.to_jsonable_dict(), token_file)
     
 @pytest.mark.asyncio
 async def test_client_initialization_with_creds():

@@ -143,7 +143,7 @@ class SharedTokenClient(object):
                 refresh_token_lifespan=refresh_token_lifespan
             )
             with open(self.__token_filename, 'w') as token_file:
-                json.dump(token_file_contents.to_json(), token_file)
+                json.dump(token_file_contents.to_jsonable_dict(), token_file)
             return token_file_contents.copy()
     
     async def __get_token_attributes(self) -> TokenFileContent:

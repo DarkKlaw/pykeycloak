@@ -1,6 +1,6 @@
 from setuptools import  find_packages, setup
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 EXCLUDED_PACKAGES = []
 
 
@@ -17,7 +17,7 @@ setup(
     install_requires=[
         'python-keycloak>=3.3.0',
         'filelock>=3.10.6',
-        'pydantic>=1.10.4'
+        'pydantic>=1.10.4,<2'
     ],
     classifiers=[
         'Intended Audience :: Science/Research',

@@ -1,6 +1,6 @@
 import os
 from typing import Optional, Union, Any
-from pydantic import SecretStr, HttpUrl, validate_arguments, parse_obj_as
+from pydantic import SecretStr, HttpUrl, validate_call
 from filelock import FileLock
 from keycloak import KeycloakOpenID
 import json
@@ -16,7 +16,7 @@ class SharedTokenClient(object):
     __token_filename: Union[Path, None] = None
     __lock_filename: Path
 
-    @validate_arguments()
+    @validate_call()
     def __init__(
         self, 
         config: ClientConfig,
@@ -34,7 +34,7 @@ class SharedTokenClient(object):
               'verify': Boolean. Defaults to True
             client: 
         '''
-        self.config = config.copy(deep=True)
+        self.config = config.model_copy(deep=True)
         str_url = str(self.config.server_url)
         # Verify the server_url (Ensure its ends with /auth/)
         if str_url.endswith('/auth'):
@@ -45,7 +45,7 @@ class SharedTokenClient(object):
             else:
                 str_url += '/auth/'
         # Override the config url
-        self.config.server_url = parse_obj_as(HttpUrl, str_url)
+        self.config.server_url = HttpUrl(str_url)
         # Connect to Keycloak
         if client is None:
             self._client = KeycloakOpenID(
@@ -70,7 +70,7 @@ class SharedTokenClient(object):
         self.__lock_filename = self.__token_filename.with_suffix('.lock')
         self.__lock = FileLock(self.__lock_filename)
 
-    @validate_arguments
+    @validate_call
     async def initialize_tokens(
         self,
         username: Optional[str] = None, 
@@ -81,7 +81,7 @@ class SharedTokenClient(object):
             try:
                 if self.__token_filename.exists():
                     with open(self.__token_filename, 'r') as token_file:
-                        token_file_contents = parse_obj_as(TokenFileContent, json.load(token_file))
+                        token_file_contents = TokenFileContent.model_validate(json.load(token_file))
                     # Check if the token is still valid
                     now = time.time()
                     if token_file_contents.access_token_lifespan < 0:
@@ -144,13 +144,13 @@ class SharedTokenClient(object):
             )
             with open(self.__token_filename, 'w') as token_file:
                 json.dump(token_file_contents.to_jsonable_dict(), token_file)
-            return token_file_contents.copy()
+            return token_file_contents.model_copy()
     
     async def __get_token_attributes(self) -> TokenFileContent:
         if self.__token_filename.exists():
             with self.__lock:
                 with open(self.__token_filename, 'r') as token_file:
-                    token_file_contents = parse_obj_as(TokenFileContent, json.load(token_file))
+                    token_file_contents = TokenFileContent.model_validate(json.load(token_file))
                 return token_file_contents
         else:
             raise FileNotFoundError(f'No existing token found at {self.__token_filename}!')
@@ -232,7 +232,7 @@ class SharedTokenClient(object):
             res = self._client.refresh_token(token_file_contents.refresh_token)
             return self.__parse_response(res)
 
-    @validate_arguments
+    @validate_call
     async def password_credentials(self, username: str, password: SecretStr) -> TokenFileContent:
         '''
             create new tokens using username and password

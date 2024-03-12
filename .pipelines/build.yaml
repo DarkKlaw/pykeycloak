@@ -20,6 +20,7 @@ resources:
     # Only trigger new builds on changes in the following paths
     paths: 
     - setup.py
+    - pyproject.toml
 
 # custom resource for pushing pypi package
 - name: pykeycloak-package

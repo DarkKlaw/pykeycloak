@@ -1,5 +1,5 @@
 from typing import Optional, Union, Any
-from pydantic import SecretStr, HttpUrl, validate_arguments, parse_obj_as
+from pydantic import SecretStr, HttpUrl, validate_call
 from keycloak import KeycloakOpenID
 import time
 import warnings
@@ -10,7 +10,7 @@ class Client(object):
     _client: KeycloakOpenID
     _token_info: TokenFileContent
 
-    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
         self, 
         config: ClientConfig, 
@@ -42,7 +42,7 @@ class Client(object):
             else:
                 str_url += '/auth/'
         # Override the config url
-        self.config.server_url = parse_obj_as(HttpUrl, str_url)
+        self.config.server_url = HttpUrl(str_url)
         # Connect to Keycloak
         if client is None:
             self._client = KeycloakOpenID(
@@ -149,7 +149,7 @@ class Client(object):
         res = self._client.refresh_token(self._token_info.refresh_token)
         return self.parse_response(res)
 
-    @validate_arguments
+    @validate_call
     def password_credentials(self, username: str, password: SecretStr) -> TokenFileContent:
         '''
             create new tokens using username and password

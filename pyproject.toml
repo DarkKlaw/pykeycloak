@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykeycloak"
-version = "0.3.0"
+version = "0.3.1"
 description = "A Simple wrapper for python-keycloak. Mainly used for simplifying keycloak interactions in Jupyter Notebooks."
 authors = [
   { name="AR2C", email="ar2c-dl@cse-cst.gc.ca" },
@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
     "python-keycloak>=3.3.0",
     "filelock>=3.10.6",
-    "pydantic>=2.6.3"
+    "pydantic>=2.6.3,<3"
 ]
 
 [project.urls]

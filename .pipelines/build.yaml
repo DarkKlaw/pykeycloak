@@ -47,7 +47,9 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: '3.10'
+        source: 
+          repository: python
+          tag: '3.10'
       run:
         path: /bin/sh
         args:

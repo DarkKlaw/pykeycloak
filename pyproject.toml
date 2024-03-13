@@ -10,7 +10,7 @@ authors = [
   { name="AR2C", email="ar2c-dl@cse-cst.gc.ca" },
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.12"
 keywords = ["DALTON", "AR2C", "Python", "Widget", "Notebook"]
 classifiers = [
     'Intended Audience :: Science/Research', 
